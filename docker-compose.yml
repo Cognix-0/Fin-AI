@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16-alpine
+    build: ./db
+    image: fin-ai-db:latest
     container_name: fin-ai-db
     restart: unless-stopped
     environment:
@@ -31,7 +32,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-finance-os-jwt-2026-xk9m2p4q8r1s5t7v3w6y1z4a8b2c5d9e}
       JWT_EXPIRE_MINUTES: 60
       JWT_REFRESH_EXPIRE_DAYS: 7
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: http://${PUBLIC_HOST:-localhost}:3000
       ENVIRONMENT: development
       UPLOAD_DIR: /app/uploads
       RUN_MIGRATIONS: "true"
@@ -45,7 +46,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_API_URL: http://${PUBLIC_HOST:-localhost}:8000
     container_name: fin-ai-frontend
     restart: unless-stopped
     depends_on:
@@ -53,7 +54,7 @@ services:
         condition: service_healthy
     environment:
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://${PUBLIC_HOST:-localhost}:8000
     ports:
       - "3000:3000"
 
