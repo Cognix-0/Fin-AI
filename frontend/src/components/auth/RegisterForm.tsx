@@ -58,7 +58,7 @@ export function RegisterForm() {
           Create your account
         </h1>
         <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)' }}>
-          Start managing your team's expenses today
+          Start managing your team&apos;s expenses today
         </p>
       </div>
 

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Dashboard — FinanceOS',
 };
 
-// This page is protected by middleware.ts
+// This page is protected by proxy.ts
 export default function DashboardPage() {
   return <DashboardView />;
 }

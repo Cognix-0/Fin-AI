@@ -16,3 +16,5 @@ README.md
 Dockerfile
 .dockerignore
 tests
+uploads
+*.db

@@ -35,3 +35,6 @@ next-env.d.ts
 Thumbs.db
 .vscode/
 .idea/
+
+# Uploaded receipts (local dev)
+backend/uploads/

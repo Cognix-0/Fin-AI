@@ -2,15 +2,20 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ['/dashboard', '/profile', '/expenses', '/settings'];
+const PROTECTED_ROUTES = [
+  '/dashboard', '/profile', '/expenses', '/approvals', '/budgets', '/reports', '/settings',
+];
 
 // Routes that should redirect authenticated users away (login/register)
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('access_token')?.value;
-  const isAuthenticated = Boolean(token);
+  // The access cookie is short-lived; a refresh cookie means the client can
+  // silently renew the session (lib/api/client.ts), so treat either as signed in.
+  const isAuthenticated = Boolean(
+    request.cookies.get('access_token')?.value || request.cookies.get('refresh_token')?.value,
+  );
 
   // Redirect authenticated users away from login/register pages
   if (isAuthenticated && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {

@@ -9,6 +9,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 import { SignOutButton } from '@/components/auth/SignOutButton';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import { CurrentUserProvider, formatRole, useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface NavItem {
@@ -29,10 +30,10 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: 'Finance',
     items: [
-      { label: 'Expenses', href: '/expenses', icon: Receipt, ready: false },
-      { label: 'Approvals', href: '/approvals', icon: CircleCheck, ready: false },
-      { label: 'Budgets', href: '/budgets', icon: Wallet, ready: false },
-      { label: 'Reports', href: '/reports', icon: ChartColumn, ready: false },
+      { label: 'Expenses', href: '/expenses', icon: Receipt, ready: true },
+      { label: 'Approvals', href: '/approvals', icon: CircleCheck, ready: true },
+      { label: 'Budgets', href: '/budgets', icon: Wallet, ready: true },
+      { label: 'Reports', href: '/reports', icon: ChartColumn, ready: true },
     ],
   },
   {
@@ -122,8 +123,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         </nav>
 
         <div className="sidebar-foot">
-          <p>Phase 2 preview</p>
-          <p className="muted">Finance data shown is sample data.</p>
+          <p>Phase 4 preview</p>
+          <p className="muted">Finance is live: expenses, approvals, budgets and reports.</p>
         </div>
       </aside>
     </>
@@ -207,14 +208,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <CurrentUserProvider>
-      <div className="app-shell">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="app-main">
-          <Topbar onMenu={() => setSidebarOpen(true)} />
-          <main className="app-content">{children}</main>
+    <QueryProvider>
+      <CurrentUserProvider>
+        <div className="app-shell">
+          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="app-main">
+            <Topbar onMenu={() => setSidebarOpen(true)} />
+            <main className="app-content">{children}</main>
+          </div>
         </div>
-      </div>
-    </CurrentUserProvider>
+      </CurrentUserProvider>
+    </QueryProvider>
   );
 }

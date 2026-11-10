@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Upload, X } from 'lucide-react';
 
-import { EXPENSE_CATEGORIES } from '@/lib/mock/dashboard';
-import { DEPARTMENTS, ExpenseFormValues, expenseSchema } from '@/lib/validation/expense';
+import { DEPARTMENTS, EXPENSE_CATEGORIES } from '@/lib/constants/finance';
+import { ExpenseFormValues, expenseSchema } from '@/lib/validation/expense';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 
 const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
 const RECEIPT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
@@ -15,7 +16,9 @@ const RECEIPT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: ExpenseFormValues, receipt: File | null, asDraft: boolean) => void;
+  /** Resolves when saved; rejects with an Error whose message is shown in the form. */
+  onSubmit: (values: ExpenseFormValues, receipt: File | null, asDraft: boolean) => Promise<void>;
+  defaultDepartment?: string | null;
 }
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -28,15 +31,18 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function NewExpenseModal({ open, onClose, onSubmit }: Props) {
+export function NewExpenseModal({ open, onClose, onSubmit, defaultDepartment }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [saving, setSaving] = useState<'draft' | 'submit' | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -51,10 +57,19 @@ export function NewExpenseModal({ open, onClose, onSubmit }: Props) {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
+  // Pre-select the user's own department once we know it
+  useEffect(() => {
+    if (open && defaultDepartment && (DEPARTMENTS as readonly string[]).includes(defaultDepartment)) {
+      setValue('department', defaultDepartment as ExpenseFormValues['department']);
+    }
+  }, [open, defaultDepartment, setValue]);
+
   function close() {
+    if (saving) return;
     reset();
     setReceipt(null);
     setReceiptError(null);
+    setSubmitError(null);
     onClose();
   }
 
@@ -73,15 +88,26 @@ export function NewExpenseModal({ open, onClose, onSubmit }: Props) {
   }
 
   const submit = (asDraft: boolean) =>
-    handleSubmit((values) => {
-      onSubmit(values, receipt, asDraft);
-      close();
+    handleSubmit(async (values) => {
+      setSubmitError(null);
+      setSaving(asDraft ? 'draft' : 'submit');
+      try {
+        await onSubmit(values, receipt, asDraft);
+        setSaving(null);
+        reset();
+        setReceipt(null);
+        onClose();
+      } catch (e) {
+        setSaving(null);
+        setSubmitError((e as Error).message);
+      }
     });
 
   return (
     <dialog
       ref={dialogRef}
       className="modal"
+      onCancel={(e) => saving && e.preventDefault()}   // don't let Esc close mid-save
       onClose={close}
       aria-labelledby="new-expense-title"
     >
@@ -181,11 +207,15 @@ export function NewExpenseModal({ open, onClose, onSubmit }: Props) {
           <FieldError id="notes-error" message={errors.notes?.message} />
         </div>
 
+        {submitError && <Alert type="error">{submitError}</Alert>}
+
         <div className="modal-actions">
-          <Button type="button" variant="ghost" onClick={submit(true)}>
+          <Button type="button" variant="ghost" onClick={submit(true)} loading={saving === 'draft'} disabled={!!saving}>
             Save draft
           </Button>
-          <Button type="submit">Submit for approval</Button>
+          <Button type="submit" loading={saving === 'submit'} disabled={!!saving}>
+            Submit for approval
+          </Button>
         </div>
       </form>
     </dialog>
