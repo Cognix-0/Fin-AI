@@ -26,7 +26,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       })
       .catch(async (err: Error & { code?: string }) => {
         if (cancelled) return;
-        // Cookie present but rejected: clear it so middleware stops treating
+        // Cookie present but rejected: clear it so the proxy stops treating
         // us as signed in, then send the user back to /login.
         if (SESSION_ERRORS.includes(err.code ?? '')) {
           await authApi.logout().catch(() => {});
@@ -52,6 +52,13 @@ const APPROVER_ROLES = ['MANAGER', 'FINANCE_ADMIN', 'SYSTEM_ADMIN'];
 
 export function canApprove(user: User | null) {
   return Boolean(user?.roles.some((r) => APPROVER_ROLES.includes(r)));
+}
+
+const FINANCE_ROLES = ['FINANCE_ADMIN', 'SYSTEM_ADMIN'];
+
+/** Can manage budgets (backend: require_finance_admin). */
+export function isFinance(user: User | null) {
+  return Boolean(user?.roles.some((r) => FINANCE_ROLES.includes(r)));
 }
 
 export function formatRole(role: string) {

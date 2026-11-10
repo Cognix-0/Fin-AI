@@ -11,7 +11,7 @@ export function SignOutButton() {
   async function handleSignOut() {
     setLoading(true);
     try {
-      // Backend clears the HTTP-only cookie; middleware then allows /login
+      // Backend revokes the refresh token and clears both HTTP-only cookies
       await authApi.logout();
     } finally {
       router.replace('/login');

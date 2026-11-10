@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { MonthlySpend } from '@/lib/mock/dashboard';
+import { MonthlySpend } from '@/types/finance';
 import { formatMoney, formatMoneyCompact } from '@/lib/format';
 
 interface Props {
@@ -15,7 +15,8 @@ function niceMax(n: number) {
 
 export function SpendingChart({ data, highlightLast }: Props) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = niceMax(Math.max(...data.map((d) => d.amount)));
+  // Guard against an all-zero series (new install, no expenses yet)
+  const max = niceMax(Math.max(1, ...data.map((d) => d.amount)));
   const ticks = [max, max / 2, 0];
   const firstHighlighted = data.length - highlightLast;
 
@@ -40,7 +41,7 @@ export function SpendingChart({ data, highlightLast }: Props) {
                 onFocus={() => setHover(i)}
                 onBlur={() => setHover(null)}
                 tabIndex={0}
-                aria-label={`${d.month}: ${formatMoney(d.amount)}`}
+                aria-label={`${d.label}: ${formatMoney(d.amount)}`}
               >
                 <div
                   className={`bar ${inPeriod ? 'is-active' : ''} ${hover === i ? 'is-hover' : ''}`}
@@ -49,7 +50,7 @@ export function SpendingChart({ data, highlightLast }: Props) {
                 {hover === i && (
                   <div className="chart-tooltip" role="tooltip">
                     <strong>{formatMoney(d.amount)}</strong>
-                    <span>{d.month}{inPeriod ? ' · in selected period' : ''}</span>
+                    <span>{d.label} {d.month.slice(0, 4)}{inPeriod ? ' · in selected period' : ''}</span>
                   </div>
                 )}
               </div>
@@ -59,7 +60,7 @@ export function SpendingChart({ data, highlightLast }: Props) {
       </div>
 
       <div className="bar-chart-labels" aria-hidden="true">
-        {data.map((d) => <span key={d.month}>{d.month}</span>)}
+        {data.map((d) => <span key={d.month}>{d.label}</span>)}
       </div>
 
       {/* Screen-reader / table view of the same data */}
@@ -68,7 +69,7 @@ export function SpendingChart({ data, highlightLast }: Props) {
         <thead><tr><th>Month</th><th>Amount</th></tr></thead>
         <tbody>
           {data.map((d) => (
-            <tr key={d.month}><td>{d.month}</td><td>{formatMoney(d.amount)}</td></tr>
+            <tr key={d.month}><td>{d.label} {d.month.slice(0, 4)}</td><td>{formatMoney(d.amount)}</td></tr>
           ))}
         </tbody>
       </table>

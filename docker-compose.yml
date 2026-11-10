@@ -33,8 +33,12 @@ services:
       JWT_REFRESH_EXPIRE_DAYS: 7
       FRONTEND_URL: http://localhost:3000
       ENVIRONMENT: development
+      UPLOAD_DIR: /app/uploads
+      RUN_MIGRATIONS: "true"
     ports:
       - "8000:8000"
+    volumes:
+      - receipts:/app/uploads
 
   frontend:
     build:
@@ -45,7 +49,8 @@ services:
     container_name: fin-ai-frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:8000
@@ -54,3 +59,4 @@ services:
 
 volumes:
   pgdata:
+  receipts:

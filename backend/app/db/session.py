@@ -1,15 +1,16 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from typing import AsyncIterator
+
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.core.config import settings
 
+_engine_kwargs: dict = {"echo": settings.db_echo, "pool_pre_ping": True}
+if not settings.database_url.startswith("sqlite"):
+    _engine_kwargs.update(pool_size=settings.db_pool_size, max_overflow=settings.db_max_overflow)
+
 # Create async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=not settings.is_production,   # log SQL in dev
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-)
+engine = create_async_engine(settings.database_url, **_engine_kwargs)
 
 # Session factory
 AsyncSessionLocal = async_sessionmaker(
@@ -20,8 +21,8 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
-async def get_db() -> AsyncSession:
-    """FastAPI dependency that yields an async database session."""
+async def get_db() -> AsyncIterator[AsyncSession]:
+    """FastAPI dependency that yields an async database session (commit on success)."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -29,8 +30,6 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
 
 
 async def check_db_connection() -> bool:

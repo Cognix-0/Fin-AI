@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { EXPENSE_CATEGORIES } from '@/lib/mock/dashboard';
-
-export const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'Operations'] as const;
+import { DEPARTMENTS, EXPENSE_CATEGORIES } from '@/lib/constants/finance';
 
 export const expenseSchema = z.object({
   merchant: z
@@ -17,7 +15,7 @@ export const expenseSchema = z.object({
     .string()
     .min(1, 'Date is required')
     .refine((d) => new Date(d) <= new Date(), 'Date cannot be in the future'),
-  category: z.enum(EXPENSE_CATEGORIES as [string, ...string[]], { error: 'Pick a category' }),
+  category: z.enum(EXPENSE_CATEGORIES, { error: 'Pick a category' }),
   department: z.enum(DEPARTMENTS, { error: 'Pick a department' }),
   notes: z.string().max(500, 'Notes are too long').optional(),
 });

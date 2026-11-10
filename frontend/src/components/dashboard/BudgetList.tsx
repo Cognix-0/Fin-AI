@@ -1,19 +1,24 @@
 import { CircleCheck, OctagonAlert, TriangleAlert } from 'lucide-react';
-import { Budget } from '@/lib/mock/dashboard';
+import { Budget, BudgetStatus } from '@/types/finance';
 import { formatMoney } from '@/lib/format';
 
-function budgetStatus(pct: number) {
-  if (pct > 100) return { tone: 'critical', label: 'Over budget', Icon: OctagonAlert };
-  if (pct >= 85) return { tone: 'warning', label: 'Near limit', Icon: TriangleAlert };
-  return { tone: 'good', label: 'On track', Icon: CircleCheck };
-}
+// Status is computed server-side from approved + pending ("committed") spend
+const STATUS = {
+  over_budget: { tone: 'critical', label: 'Over budget', Icon: OctagonAlert },
+  near_limit: { tone: 'warning', label: 'Near limit', Icon: TriangleAlert },
+  on_track: { tone: 'good', label: 'On track', Icon: CircleCheck },
+  no_budget: { tone: 'good', label: 'No budget', Icon: CircleCheck },
+} satisfies Record<BudgetStatus, unknown>;
 
 export function BudgetList({ budgets }: { budgets: Budget[] }) {
+  if (budgets.length === 0) {
+    return <p className="empty">No budgets set for this month yet.</p>;
+  }
   return (
     <ul className="budget-list">
       {budgets.map((b) => {
-        const pct = (b.spent / b.limit) * 100;
-        const { tone, label, Icon } = budgetStatus(pct);
+        const pct = b.utilization;
+        const { tone, label, Icon } = STATUS[b.status];
         return (
           <li key={b.department}>
             <div className="budget-row">
@@ -34,7 +39,8 @@ export function BudgetList({ budgets }: { budgets: Budget[] }) {
               <div className={`meter-fill meter-fill--${tone}`} style={{ width: `${Math.min(pct, 100)}%` }} />
             </div>
             <p className="budget-meta">
-              {formatMoney(b.spent)} of {formatMoney(b.limit)} · {Math.round(pct)}%
+              {formatMoney(b.spent + b.pending)} of {formatMoney(b.limit)} · {Math.round(pct)}%
+              {b.pending > 0 && <span className="muted"> · {formatMoney(b.pending)} pending</span>}
             </p>
           </li>
         );
