@@ -13,12 +13,13 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // The access cookie is short-lived; a refresh cookie means the client can
   // silently renew the session (lib/api/client.ts), so treat either as signed in.
-  const isAuthenticated = Boolean(
-    request.cookies.get('access_token')?.value || request.cookies.get('refresh_token')?.value,
-  );
+  const hasAccess = Boolean(request.cookies.get('access_token')?.value);
+  const isAuthenticated = hasAccess || Boolean(request.cookies.get('refresh_token')?.value);
 
-  // Redirect authenticated users away from login/register pages
-  if (isAuthenticated && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {
+  // Redirect signed-in users away from login/register pages. Only a live access
+  // cookie counts here: a leftover (possibly stale) refresh cookie must never
+  // lock the user out of /login, or a dead session becomes a redirect trap.
+  if (hasAccess && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
